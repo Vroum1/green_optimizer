@@ -37,6 +37,7 @@ Lancer l'analyse d'un fichier HTML local :
 ```bash
 cargo run --release ./path/to/local/file.html
 ```
+> Le répertoire /dummy_data contient des exemples de fichiers HTML locaux pour les tests.
 
 ## Fonctionnalités
 
