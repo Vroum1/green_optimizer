@@ -1,5 +1,7 @@
+use std::env;
 use std::io::{stdin,stdout,Write};
 use regex::Regex;
+use minify_html::{Cfg, minify};
 
 mod resource_extractor;
 use resource_extractor::extract_ressources;
@@ -9,15 +11,41 @@ use output::print_result;
 use output::print_css_analysis;
 
 mod url_resolver;
+use url_resolver::is_local_path;
+
 mod css_analyzer;
 
 #[tokio::main]
 async fn main() {
-    let url_input=get_user_url().await;
+    let html: String;
+    let url: String;
+    let mut local: bool = false;
     
-    let url = &url_input;
-    let response = reqwest::get(url).await.unwrap();
-    let html = response.text().await.unwrap();
+    let args: Vec<String> = env::args().collect();
+    
+    if args.len() > 1 {
+        let input = &args[1];
+        
+        if is_local_path(input) {
+            // Local file mode
+            local = true;
+            println!("📁 Analyzing local file: {}", input);
+            html = std::fs::read_to_string(input).expect("Failed to read the file");
+            url = input.to_string();
+        } else {
+            // URL passed as argument
+            println!("🌐 Analyzing URL: {}", input);
+            url = input.to_string();
+            let response = reqwest::get(&url).await.unwrap();
+            html = response.text().await.unwrap();
+        }
+    } else {
+        // Interactive mode - ask user for URL
+        let url_input = get_user_url().await;
+        url = url_input;
+        let response = reqwest::get(&url).await.unwrap();
+        html = response.text().await.unwrap();
+    }
     
     // Calculate HTML size in bytes
     let html_size = html.len();
@@ -27,31 +55,44 @@ async fn main() {
     let document = scraper::Html::parse_document(&html);
     
     let mut total_size = html_size;
-    let mut total_requests = 1; // Start with 1 for the initial HTML request
+    let mut total_requests = 1;
     
     // Extract CSS files
     let css_selector = scraper::Selector::parse("link[rel='stylesheet']").unwrap();
-    let css_count = resource_extractor::extract_ressources(css_selector, &document, url, "href", "CSS", &mut total_size).await;
+    let css_count = resource_extractor::extract_ressources(css_selector, &document, &url, "href", "CSS", &mut total_size).await;
     total_requests += css_count;
 
     // Extract JS files
     let js_selector = scraper::Selector::parse("script[src]").unwrap();
-    let js_count = extract_ressources(js_selector, &document, url, "src", "JS", &mut total_size).await;
+    let js_count = extract_ressources(js_selector, &document, &url, "src", "JS", &mut total_size).await;
     total_requests += js_count;
 
     // Extract images
     let img_selector = scraper::Selector::parse("img[src]").unwrap();
-    let img_count = extract_ressources(img_selector, &document, url, "src", "Image", &mut total_size).await;
+    let img_count = extract_ressources(img_selector, &document, &url, "src", "Image", &mut total_size).await;
     total_requests += img_count;
 
     // Extract fonts
     let font_selector = scraper::Selector::parse("link[rel='preload'][as='font'], link[href$='.woff'], link[href$='.woff2']").unwrap();
-    let font_count = extract_ressources(font_selector, &document, url, "href", "Font", &mut total_size).await;
+    let font_count = extract_ressources(font_selector, &document, &url, "href", "Font", &mut total_size).await;
     total_requests += font_count;
 
-    let css_analysis = css_analyzer::analyze_css(&document, url).await;
-    print_result(total_requests,css_count,js_count,img_count,font_count,total_size);
+    let css_analysis = css_analyzer::analyze_css(&document, &url).await;
+    print_result(total_requests, css_count, js_count, img_count, font_count, total_size);
     print_css_analysis(&css_analysis);
+
+    if local {
+        println!("Do you wish to minify the local file? (y/n): ");
+        let mut choice=String::new();
+        stdin().read_line(&mut choice).expect("Failed to read input");
+        if choice.trim().to_lowercase() == "y" {
+            let cfg = Cfg { ..Cfg::default() };
+            let minified = minify(html.as_bytes(), &cfg);
+            let output_path = "minified_output.html";
+            std::fs::write(output_path, minified).expect("Failed to write minified file");
+            println!("Minified file saved as {}", output_path);
+        }
+    }
 }
 
 async fn get_user_url() -> String {
