@@ -1,4 +1,4 @@
-use crate::url_resolver::{resolve_url, is_remote_url, is_local_path};
+use crate::url_resolver::{resolve_url, is_remote_url};
 use std::fs;
 
 pub async fn extract_ressources(
@@ -6,6 +6,7 @@ pub async fn extract_ressources(
     document: &scraper::Html,
     url: &str,
     attr_name: &str,
+    images_urls: &mut Vec<String>,
     resource_type: &str,
     total_size: &mut usize
 ) -> usize {
@@ -13,6 +14,9 @@ pub async fn extract_ressources(
     
     for element in document.select(&selector) {
         if let Some(src) = element.value().attr(attr_name) {
+            if resource_type == "Image" {
+                images_urls.push(resolve_url(url, src));
+            }
             let resource_url = resolve_url(url, src);
             
             let size_result = if is_remote_url(&resource_url) {
