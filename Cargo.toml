@@ -1,0 +1,14 @@
+[package]
+name = "green_optimizer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.48.0", features = ["full"] }
+reqwest = "0.12.24"
+scraper = "0.24.0"
+url = "2.5.7"
+webp = "0.2"
+regex = "1.12.2"
+headless_chrome = "1.0"
+colored = "2"
