@@ -1,6 +1,7 @@
 use std::path::Path;
+use std::fs;
 
-pub fn convert_images_to_webp(images_urls: &Vec<String>) {
+pub fn convert_images_to_webp(images_urls: &Vec<String>) -> Vec<String>{
     use image::io::Reader as ImageReader;
     use webp::Encoder;
     use colored::*;
@@ -9,6 +10,7 @@ pub fn convert_images_to_webp(images_urls: &Vec<String>) {
     
     let mut converted = 0;
     let mut total_saved: i64 = 0;
+    let mut converted_urls: Vec<String> = Vec::new();
     
     for image_path in images_urls {
         // Skip remote URLs and non-image files
@@ -73,11 +75,16 @@ pub fn convert_images_to_webp(images_urls: &Vec<String>) {
                                 } else {
                                     format!("increased {} bytes", -saved).red()
                                 };
+
+                                
                                 
                                 println!("  ✅ {} -> {} ({})", 
                                     image_path, 
                                     output_path.display(),
                                     saved_str);
+
+                                fs::remove_file(image_path).expect(&format!("Failed to delete {} file", image_path));
+                                converted_urls.push(output_path.to_string_lossy().to_string());
                             },
                             Err(e) => {
                                 println!("  ❌ Failed to write {}: {}", output_path.display(), e);
@@ -109,4 +116,7 @@ pub fn convert_images_to_webp(images_urls: &Vec<String>) {
             (-total_saved).to_string().red().bold());
     }
     println!("{}", "═══════════════════════════════════════".cyan());
+
+    return converted_urls;
 }
+

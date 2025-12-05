@@ -1,9 +1,9 @@
 [package]
 name = "green_optimizer"
 version = "0.1.0"
-edition = "2025"
+edition = "2024"
 authors = ["Équipe Bon"]
-license = "MIT"
+license = "GNU GPL V3"
 description = "Outil d'audit écologique pour pages web"
 repository = "https://github.com/Vroum1/green_optimizer"
 

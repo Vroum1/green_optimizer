@@ -1,4 +1,4 @@
-use std::env;
+use std::{convert, env};
 use std::io::{stdin,stdout,Write};
 use regex::Regex;
 
@@ -17,8 +17,9 @@ mod css_analyzer;
 mod image_converter;
 use image_converter::convert_images_to_webp;
 
-mod html_minifier;
-use html_minifier::minify_html_content;
+mod html_manager;
+use html_manager::minify_html_content;
+use html_manager::change_html_image_urls;
 
 #[tokio::main]
 async fn main() {
@@ -87,19 +88,23 @@ async fn main() {
     print_result(total_requests, css_count, js_count, img_count, font_count, total_size);
     print_css_analysis(&css_analysis);
 
+    let mut converted_urls: Vec<String> = Vec::new();
+
     if local {
         println!("Do you wish to convert images to webp format? (It would save space) (y/n): ");
         let mut choice=String::new();
         stdin().read_line(&mut choice).expect("Failed to read input");
         if choice.trim().to_lowercase() == "y" {
-            convert_images_to_webp(&images_urls);
+            converted_urls = convert_images_to_webp(&images_urls);
+            change_html_image_urls(&url, &converted_urls);
         }
 
         println!("Do you wish to minify the local file? (y/n): ");
         let mut choice=String::new();
         stdin().read_line(&mut choice).expect("Failed to read input");
         if choice.trim().to_lowercase() == "y" {
-            minify_html_content(&html, &url);
+            let updated_html = std::fs::read_to_string(&url).expect("Failed to read file");
+            minify_html_content(&updated_html, &url);
         }
 
     }
