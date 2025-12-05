@@ -44,3 +44,7 @@ cargo run --release ./path/to/local/file.html
 - Extraction et analyse des ressources (CSS, images).
 - Conversion des images au format WebP pour réduire la taille.
 - Minification du fichier HTML local pour optimiser la taille.
+
+## Licence
+
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.

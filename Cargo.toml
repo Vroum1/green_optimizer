@@ -1,7 +1,12 @@
 [package]
 name = "green_optimizer"
 version = "0.1.0"
-edition = "2024"
+edition = "2025"
+authors = ["Équipe Bon"]
+license = "MIT"
+description = "Outil d'audit écologique pour pages web"
+repository = "https://github.com/Vroum1/green_optimizer"
+
 
 [dependencies]
 tokio = { version = "1.48.0", features = ["full"] }
